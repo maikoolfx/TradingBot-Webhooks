@@ -1,42 +1,42 @@
 import os
 import requests
-from google import genai 
-from google.genai.errors import APIError
+from openai import OpenAI # ¡NUEVA LIBRERÍA!
 
-# Las claves se leen automáticamente de los secretos de GitHub
+# La URL del Webhook y la Clave de la IA
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL") 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # ¡NUEVO NOMBRE DE CLAVE!
 
-# --- FUNCIÓN DE INTERACCIÓN CON GEMINI ---
-def generate_gemini_phrase():
-    """Conecta con el modelo Gemini y pide la frase motivacional de trading."""
-    if not GEMINI_API_KEY:
-        return "Error de IA: La clave de Gemini API no está configurada."
+# --- FUNCIÓN DE INTERACCIÓN CON OPENAI ---
+def generate_openai_phrase():
+    """Conecta con el modelo de OpenAI y pide la frase motivacional de trading."""
+    if not OPENAI_API_KEY:
+        return "Error de IA: La clave de OpenAI no está configurada."
 
     try:
-        # Inicializar el cliente de Gemini
-        client = genai.Client(api_key=GEMINI_API_KEY)
+        # Inicializar el cliente de OpenAI
+        client = OpenAI(api_key=OPENAI_API_KEY)
         
         # El prompt para la IA:
         prompt = "Genera una frase motivacional de trading concisa, profunda y aplicable al día de hoy. Sin dar explicaciones, títulos, ni usar hashtags. Solo la frase."
 
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-            config=genai.types.GenerateContentConfig(
-                max_output_tokens=50 
-            )
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo", # Modelo rápido y estable
+            messages=[
+                {"role": "system", "content": "Eres un gurú de trading que da motivación concisa."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=50
         )
-        return response.text.strip()
+        # Extraer el texto de la respuesta
+        return response.choices[0].message.content.strip()
 
-    except APIError as e:
-        print(f"Error de la API de Gemini: {e}")
-        return "La API de Gemini reportó un error. Revisa la clave y la facturación."
     except Exception as e:
-        print(f"Error general al generar la frase: {e}")
-        return "La IA tuvo un problema técnico, pero tu disciplina debe continuar."
+        # Manejo de errores que vimos antes (imprime en el log de GitHub)
+        error_message = f"Error al generar la frase con OpenAI: {e}" 
+        print(error_message) 
+        return f"Error técnico con OpenAI: {e}" 
 
-# --- FUNCIÓN DE ENVÍO CON WEBHOOK ---
+# --- FUNCIÓN DE ENVÍO CON WEBHOOK (SIN CAMBIOS) ---
 def send_daily_message_via_webhook():
     """Genera la frase con la IA y la envía al Webhook de Discord."""
     
@@ -44,26 +44,23 @@ def send_daily_message_via_webhook():
         print("ERROR: La URL del Webhook no está configurada.")
         return
 
-    phrase = generate_gemini_phrase()
+    # Usamos la nueva función de generación de OpenAI
+    phrase = generate_openai_phrase()
 
-    # Estructura del mensaje (Discord acepta HTML-like embeds)
     data = {
         "embeds": [{
-            "title": "✨ Consejo de Trading por Gemini ✨",
+            "title": "💡 Consejo de Trading por GPT-3.5 💡", # Cambiamos el título
             "description": f"**>>>** {phrase}",
-            "color": 3447003, # Código de color azul
-            "footer": {"text": "Generado por el modelo Gemini 2.5 Flash"}
+            "color": 15844367, # Código de color verde/amarillo para OpenAI
+            "footer": {"text": "Generado por el modelo GPT-3.5 Turbo"}
         }]
     }
 
     try:
-        # Enviamos la solicitud HTTP POST
-        response = requests.post(WEBHOOK_URL, json=data)
-        response.raise_for_status() 
+        requests.post(WEBHOOK_URL, json=data).raise_for_status() 
         print("Mensaje de IA enviado con éxito vía Webhook.")
     except Exception as e:
         print(f"Error al enviar el mensaje por Webhook: {e}")
 
-# Ejecutar la función principal.
 if __name__ == "__main__":
     send_daily_message_via_webhook()
