@@ -1,4 +1,4 @@
-name: Publicación Diaria de Frase Motivacional (Gemini)
+name: Publicación Diaria de Frase Motivacional (OpenAI)
 
 on:
   schedule:
@@ -7,7 +7,6 @@ on:
     # 8:30 AM Hora de Ciudad de México (14:30 UTC)
     - cron: '30 14 * * *'
   workflow_dispatch:
-    # Permite ejecutar el workflow manualmente
 
 jobs:
   post_to_discord:
@@ -22,16 +21,16 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Instalar Dependencias (Gemini y Requests)
+    - name: Instalar Dependencias (OpenAI y Requests)
       run: |
         python -m pip install --upgrade pip
         # Instalamos las librerías necesarias
-        pip install google-genai requests 
+        pip install openai requests # ¡CAMBIO AQUÍ!
 
     - name: Ejecutar el Script de Python
       env:
-        # Cargamos las claves desde los secretos de GitHub
+        # Claves secretas de Webhook y AHORA de OpenAI
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }} 
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} # ¡CAMBIO DE NOMBRE!
       run: |
         python main.py
