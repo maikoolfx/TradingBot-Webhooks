@@ -1,0 +1,37 @@
+name: Publicación Diaria de Frase Motivacional (Gemini)
+
+on:
+  schedule:
+    # 7:00 AM Hora de Ciudad de México (13:00 UTC)
+    - cron: '0 13 * * *' 
+    # 8:30 AM Hora de Ciudad de México (14:30 UTC)
+    - cron: '30 14 * * *'
+  workflow_dispatch:
+    # Permite ejecutar el workflow manualmente
+
+jobs:
+  post_to_discord:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout del Repositorio
+      uses: actions/checkout@v4
+
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Instalar Dependencias (Gemini y Requests)
+      run: |
+        python -m pip install --upgrade pip
+        # Instalamos las librerías necesarias
+        pip install google-genai requests 
+
+    - name: Ejecutar el Script de Python
+      env:
+        # Cargamos las claves desde los secretos de GitHub
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }} 
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
+      run: |
+        python main.py
